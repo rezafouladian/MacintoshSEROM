@@ -1,4 +1,6 @@
+
         IFND OutboundBuild
+            INCLUDE 'ROMTools/Include.s'
             INCLUDE 'ROMTools/Globals.s'
             INCLUDE 'ROMTools/CommonConst.s'
             INCLUDE 'ROMTools/TrapMacros.s'
