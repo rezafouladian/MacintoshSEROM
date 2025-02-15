@@ -1,7 +1,9 @@
+        IFND OutboundBuild
             INCLUDE 'ROMTools/Globals.s'
             INCLUDE 'ROMTools/CommonConst.s'
             INCLUDE 'ROMTools/TrapMacros.s'
             INCLUDE 'ROMTools/Hardware/SE.s'
+        ENDIF
 
 
 
