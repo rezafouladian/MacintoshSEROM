@@ -309,5 +309,202 @@ InitXVectTables:
 .L1:
             move.l  A1,(A0)+
             dbf     D0,.L1
-
+.L2:
+            lea     OneSecInt,A0
+.L3:
+            move.l  A0,(A2)+
+            lea     VBLINT,A0
+            move.l  A0,(A2)
+            lea     Lvl2DT,A2
+            lea     EXTBINT,A0
+            move.l  A0,(A2)
+            lea     EXTAINT,A0
+            move.l  A0,($10,A2)
+            lea     ExtStsDT,A2
+            lea     OneSecInt\.done,A0
+            move.l  A0,(A2)+
+            move.l  A0,(A2)+
+            move.l  A0,(A2)+
+            move.l  A0,(A2)
+            lea     Lev1AutoVector,A2
+            lea     LVL1INT,A0
+            move.l  A0,(A2)+
+            lea     LVL2INT,A0
+            move.l  A0,(A2)+
+            lea     SPURIOUS,A0
+            move.l  A0,(A2)
+            rts
+WhichCPU:
+            lea     IllegalInstructionVector,A1
+            move.l  (A1),-(SP)
+            lea     .L1,A0
+            move.l  A0,(A1)
+            movea.l SP,A0
+            clr.w   -(SP)
+            moveq   #2,D1
+            moveq   #1,D0
+            movec   D0,CACR
+            bra     .L2
+.L1:
+            moveq   #1,D1
+            cmpi.w  #$10,($6,SP)
+            beq.b   .L2
+            moveq   #0,D1
+.L2:
+            movea.l A0,SP
+            move.l  (SP)+,(A1)
+            move.b  D1,D7
+            rts
+SetupTimeK:
+            move    SR,-(SP)
+            move.l  Lev1AutoVector,-(SP)
+            movea.l #VBase,A1
+            bclr.b  #5,(vACR,A1)
+            move.b  #$FF,(vT2CH,A1)
+            move.b  #$A0,(vIER,A1)
+            andi    #$F8FF,SR
+            move.l  SP,D1
+            lea     .L4,A0
+            move.l  A0,Lev1AutoVector
+            moveq   #-1,D0
+            bra.b   .L3
+.L1:
+            move.b  #$F,(vT2C,A1)
+            move.b  #$3,(vT2CH,A1)
+.L2:
+            dbf     D0,.L2
+            bra.b   .L4
+.L3:
+            bra.b   .L1
+.L4:
+            tst.b   (vT2C,A1)
+            not.w   D0
+            move.w  D0,TimeDBRA
+            movea.l D1,SP
+            andi    #$F8FF,SR
+            lea     .L8,A0
+            move.l  A0,Lev1AutoVector
+            movea.l #$9FFFF8,A0
+            moveq   #-1,D0
+            bra.b   .L7
+.L5:
+            move.b  #$F,(vT2C,A1)
+            move.b  #$3,(vT2CH,A1)
+.L6:
+            btst.b  #0,(A0)
+            dbf     D0,.L6
+            bra.b   .L8
+.L7:
+            bra.b   .L5
+.L8:
+            tst.b   (vT2C,A1)
+            not.w   D0
+            move.w  D0,TimeSCCDB
+            movea.l D1,SP
+            move.b  #$20,(vIER,A1)
+            move.l  (SP)+,Lev1AutoVector
+            move    (SP)+,SR
+            rts
+InitSCSIGlobals:
+            move.l  #MacSCSIBase,SCSIBase
+            move.l  #MacSCSIDMA,SCSIDMA
+            move.l  #MacSCSIHsk,SCSIHsk
+            rts
+InitSCSI:
+            lea     SCSIWr,A0
+            clr.b   (sICR,A0)                       ; Clear Initiator Command Register
+            clr.b   (sMR,A0)                        ; Clear Mode Register
+            clr.b   (sTCR,A0)                       ; Clear Target Command Register
+            clr.b   (sSER,A0)                       ; Clear Select Enable Register
+            rts
+InitIWMGlobals:
+            move.l  #DBase,IWM
+            rts
+InitIWM:
+            movea.l DBase,A0
+            moveq   #17,D0
+.L1:
+            tst.b   (mtrOff,A0)
+            tst.b   (q6H,A0)
+            move.b  (q7L,A0),D2
+            btst.l  #5,D2
+            bne.b   .L1
+            and.b   D0,D2
+            cmp.b   D0,D2
+            beq.b   .L2
+            move.b  D0,(q7H,A0)
+            tst.b   (q7L,A0)
+            bra.b   .L1
+.L2:
+            tst.b   (q6L,A0)
+            rts
+InitVIAGlobals:
+            move.l  VBase,VIA
+            rts
+InitVIA:
+            movea.l #VBase,A0
+            move.b  #$69,(vBufA,A0)
+            move.b  #$7F,(vDIRA,A0)
+            move.b  #$C7,(vBufB,A0)
+            move.b  #$C7,(vDIRB,A0)
+            move.b  #$7F,(vIER,A0)
+            rts
+VIATimerEnables:
+            movea.l #VBase,A0
+            andi.b  #$F0,(vPCR,A0)
+            move.b  #$83,(vIER,A0)
+            rts
+InitSCCGlobals:
+            move.l  #SCCWBase,SCCWr
+            move.l  #SCCRBase,SCCRd
+            clr.l   PollProc
+            rts
+Gary:
+            dc.l    $940044C
+            dc.l    $20003C0
+            dc.l    $F080010
+            dc.l    $100101
+            dc.l    $980044C
+            dc.l    $3C00F08
+            dc.l    $100010
+            dc.l    $101090A
+InitSCC:
+            movea.l SCCWBase,A0
+            movea.l SCCRBase,A1
+            tst.b   (-1,A1)
+            lea     Gary,A2
+            moveq   #$10,D1
+            bsr.b   WriteSCC
+            addq.l  #2,A0
+            addq.l  #2,A1
+            moveq   #$10,D1
+            bsr.b   WriteSCC
+            rts
+WriteSCC:
+            move.b  (A1),D2
+            bra.b   .L2
+.L1:
+            move.l  (SP),(SP)
+            move.l  (SP),(SP)
+            move.b  (A2)+,(A0)
+.L2:
+            dbf     D1,.L1
+            rts
+InitVidGlobals:
+            move.l  BufPtr,ScrnBase
+            move.w  #64,ScreenRow
+            move.w  #60,VertRRate
+            move.l  #$480048,ScrVRes
+            rts
+InitCrsrVars:
+            lea     GrafBegin,A0
+            lea     GrafEnd,A1
+.L1:
+            clr.w   (A0)+
+            cmpa.l  A1,A0
+            bcs.b   .L1
+            rts
+InitCrsrMgr:
+            move.l  #$F000F,D0
+                
 
