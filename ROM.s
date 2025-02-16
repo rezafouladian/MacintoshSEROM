@@ -343,7 +343,9 @@ WhichCPU:
             clr.w   -(SP)
             moveq   #2,D1
             moveq   #1,D0
+            machine 68040
             movec   D0,CACR
+            machine 68000
             bra     .L2
 .L1:
             moveq   #1,D1
