@@ -371,10 +371,10 @@ sub_400408:
 SetUpTimeK:
             move    SR,-(SP)
             move.l  Lev1AutoVector,-(SP)
-            movea.l #$EFE1FE,A1
-            bclr    #5,($1600,A1)
-            move.b  #$FF,($1200,A1)
-            move.b  #$A0,($1C00,A1)
+            movea.l #VBase,A1
+            bclr    #5,(vACR,A1)
+            move.b  #$FF,(vT2CH,A1)
+            move.b  #$A0,(vIER,A1)
             andi    #$F8FF,SR
             move.l  SP,D1
             lea     .L4,A0
@@ -382,8 +382,8 @@ SetUpTimeK:
             moveq   #-1,D0
             bra.b   .L3
 .L1:
-            move.b  #$F,($1000,A1)
-            move.b  #3,($1200,A1)
+            move.b  #$F,(vT2C,A1)
+            move.b  #3,(vT2CH,A1)
 .L2:
             dbra    D0,.L2
             bra.b   .L4
@@ -401,7 +401,7 @@ SetUpTimeK:
             moveq   #-1,D0
             bra.b   .L7
 .L5:
-            move.b  #$F,($1000,A1)
+            move.b  #$F,(vT2C,A1)
             move.b  #3,($1200,A1)
 .L6:
             btst    #0,(A0)
@@ -410,18 +410,18 @@ SetUpTimeK:
 .L7:
             bra.b   .L5
 .L8:
-            tst.b   ($1000,A1)
+            tst.b   (vT2C,A1)
             not.w   D0
             move.w  D0,TimeSCCDB
             movea.l D1,SP
-            move.b  #$20,($1C00,A1)
+            move.b  #$20,(vIER,A1)
             move.l  (SP)+,Lev1AutoVector
             move    (SP)+,SR
             rts
 InitSCSIGlobals:
-            move.l  #$5FF000,SCSIBase
-            move.l  #$5FF200,SCSIDMA
-            move.l  #$5FF200,SCSIHsk
+            move.l  #MacSCSIBase,SCSIBase
+            move.l  #MacSCSIDMA,SCSIDMA
+            move.l  #MacSCSIHsk,SCSIHsk
             rts
 InitSCSI:
             lea     ($5FF001).l,A0
@@ -44967,9 +44967,9 @@ sub_41C1C0:
             move.w  .L7(PC,D0.w),D0
             jmp     .L6(PC,D0.w)
 .L7:
-            dc.w    sub_41C654.L13-.L6
-            dc.w    sub_41C654.L12-.L6
-            dc.w    sub_41C654.L28-.L6
+            dc.w    sub_41c718.L13-.L6
+            dc.w    sub_41c718-.L6
+            dc.w    sub_41c718.L28-.L6
             dc.w    sub_41C824.L2-.L6
             dc.w    sub_41C8CA.L16-.L6
             dc.w    sub_41C8CA.L16-.L6
@@ -45428,21 +45428,32 @@ sub_41C59C:
             move.l  #$FFFFF800,D5
 .L9:
             rts
-sub_41C654:
+PACK:
             andi.w  #$E,D0
-            move.w  .L1(PC,D0.w),D0
+            move.w  PACKCASE(PC,D0.w),D0
             movea.l ($A,A6),A3
             move.w  A4,D3
             cmpi.w  #$7FFF,D3
-            jmp     sub_41C654(PC,D0.w)
-.L1:
-            dc.w    $0032,$0086,$0060,0,$0024,$0028,$002C,$3685
-            dc.w    $4E75
+            jmp     PACK(PC,D0.w)
+PACKCASE:
+            dc.w    PACKEXT-PACK
+            dc.w    PACKDBL-PACK
+            dc.w    PACKSGL-PACK
+            dc.w    0
+            dc.w    PACKI16-PACK
+            dc.w    PACKI32-PACK
+            dc.w    PACKC64-PACK
+PACKI16:
+            move.w  D5,(A3)
+            rts
+PACKI32:
             move.l  D5,(A3)
             rts
+PACKC64:
             move.l  D4,(A3)+
             move.l  D5,(A3)
             rts
+PACKEXT:
             btst    #9,D6
             beq.b   .L4
             tst.w   D3
@@ -45468,6 +45479,7 @@ sub_41C654:
             move.l  D4,(A3)+
             move.l  D5,(A3)
             rts
+PACKSGL:
             bne.b   .L6
             move.w  #$4080,D3
             bra.b   .L7
@@ -45487,6 +45499,7 @@ sub_41C654:
             roxr.l  #1,D4
             move.l  D4,(A3)
             rts
+PACKDBL:
             bne.b   .L9
             move.w  #$4400,D3
             bra.b   .L10
@@ -45515,7 +45528,7 @@ sub_41C654:
             move.l  D4,(A3)+
             move.l  D5,(A3)
             rts
-.L12:
+sub_41c718:
             eori.b  #$A0,D6
 .L13:
             move.w  .L14(PC,D3.w),D3
